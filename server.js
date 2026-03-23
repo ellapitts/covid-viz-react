@@ -1,18 +1,34 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import cors from "cors";
+import helmet from "helmet";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
+// Security middleware — must come first
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      connectSrc: ["'self'", "https://disease.sh"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+    },
+  },
+}));
+app.use(cors({ origin: process.env.CORS_ORIGIN }));
 
 // Serve the built React app (static files from dist/)
 app.use(express.static(path.join(__dirname, "dist")));
-
-// Serve covid_data.json from public/ during dev if needed
-app.use("/public", express.static(path.join(__dirname, "public")));
 
 // Catch-all: send index.html for any route (SPA support)
 app.get("/{*path}", (req, res) => {
